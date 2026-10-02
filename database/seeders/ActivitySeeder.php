@@ -3,58 +3,46 @@
 namespace Database\Seeders;
 
 use App\Models\Activity;
+use App\Models\Category;
 use Illuminate\Database\Seeder;
 
 class ActivitySeeder extends Seeder
 {
     public function run(): void
     {
-        Activity::query()->insert([
-            [
-                'title' => 'Workshop Git Dasar',
-                'description' => 'Latihan dasar penggunaan Git dan repository.',
-                'activity_date' => '2026-10-05',
-                'category' => 'Workshop',
-                'status' => 'Planned',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Seminar Web Quality',
-                'description' => 'Pengenalan kualitas dan maintainability aplikasi web.',
-                'activity_date' => '2026-10-12',
-                'category' => 'Seminar',
-                'status' => 'Planned',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Pelatihan Laravel Dasar',
-                'description' => 'Belajar route, controller, model, dan Blade.',
-                'activity_date' => '2026-10-18',
-                'category' => 'Pelatihan',
-                'status' => 'Ongoing',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Diskusi Proyek Web',
-                'description' => 'Diskusi perkembangan proyek mahasiswa.',
-                'activity_date' => '2026-10-21',
-                'category' => 'Diskusi',
-                'status' => 'Ongoing',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'title' => 'Pengenalan HTML CSS',
-                'description' => 'Kegiatan pengenalan dasar HTML dan CSS.',
-                'activity_date' => '2026-09-15',
-                'category' => 'Workshop',
-                'status' => 'Done',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        $workshop = Category::where('slug', 'workshop')->firstOrFail();
+        $seminar = Category::where('slug', 'seminar')->firstOrFail();
+        $pelatihan = Category::where('slug', 'pelatihan')->firstOrFail();
+
+        for ($i = 1; $i <= 15; $i++) {
+            $category = match ($i % 3) {
+                0 => $workshop,
+                1 => $seminar,
+                default => $pelatihan,
+            };
+
+            $status = match ($i % 3) {
+                0 => 'draft',
+                1 => 'published',
+                default => 'completed',
+            };
+
+            Activity::create([
+                'category_id' => $category->id,
+                'code' => 'ACT-' . str_pad(
+                    (string) $i,
+                    3,
+                    '0',
+                    STR_PAD_LEFT
+                ),
+                'title' => 'Activity ' . $i,
+                'description' => 'Data kegiatan untuk Special Challenge.',
+                'start_at' => now()->addDays($i),
+                'end_at' => now()->addDays($i)->addHours(2),
+                'location' => 'Ruang ' . (($i % 5) + 1),
+                'capacity' => 20 + $i,
+                'status' => $status,
+            ]);
+        }
     }
 }

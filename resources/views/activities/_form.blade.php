@@ -1,87 +1,179 @@
-<label for="title">Judul</label>
+<div>
+    <label for="category_id">
+        Kategori
+    </label>
 
-<input
-    id="title"
-    name="title"
-    value="{{ old('title', $activity->title ?? '') }}"
->
-
-@error('title')
-    <p>{{ $message }}</p>
-@enderror
-
-
-<label for="description">Deskripsi</label>
-
-<textarea
-    id="description"
-    name="description"
->{{ old('description', $activity->description ?? '') }}</textarea>
-
-@error('description')
-    <p>{{ $message }}</p>
-@enderror
-
-
-<label for="activity_date">
-    Tanggal
-</label>
-
-<input
-    id="activity_date"
-    name="activity_date"
-    type="date"
-    value="{{ old(
-        'activity_date',
-        isset($activity)
-            ? $activity->activity_date->format('Y-m-d')
-            : ''
-    ) }}"
->
-
-@error('activity_date')
-    <p>{{ $message }}</p>
-@enderror
-
-
-<label for="category">
-    Kategori
-</label>
-
-<input
-    id="category"
-    name="category"
-    value="{{ old('category', $activity->category ?? '') }}"
->
-
-@error('category')
-    <p>{{ $message }}</p>
-@enderror
-
-
-<label for="status">
-    Status
-</label>
-
-<select
-    id="status"
-    name="status"
->
-    @foreach (['Planned', 'Ongoing', 'Done'] as $status)
-        <option
-            value="{{ $status }}"
-            @selected(
-                old(
-                    'status',
-                    $activity->status ?? 'Planned'
-                ) === $status
-            )
-        >
-            {{ $status }}
+    <select
+        id="category_id"
+        name="category_id"
+    >
+        <option value="">
+            Pilih kategori
         </option>
-    @endforeach
-</select>
 
-@error('status')
-    <p>{{ $message }}</p>
-@enderror
+        @foreach ($categories as $category)
+            <option
+                value="{{ $category->id }}"
+                @selected(
+                    old(
+                        'category_id',
+                        $activity->category_id ?? ''
+                    ) == $category->id
+                )
+            >
+                {{ $category->name }}
+            </option>
+        @endforeach
+    </select>
+</div>
+
+<br>
+
+<div>
+    <label for="code">
+        Kode
+    </label>
+
+    <input
+        id="code"
+        type="text"
+        name="code"
+        value="{{ old(
+            'code',
+            $activity->code ?? ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="title">
+        Judul
+    </label>
+
+    <input
+        id="title"
+        type="text"
+        name="title"
+        value="{{ old(
+            'title',
+            $activity->title ?? ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="description">
+        Deskripsi
+    </label>
+
+    <textarea
+        id="description"
+        name="description"
+    >{{ old(
+        'description',
+        $activity->description ?? ''
+    ) }}</textarea>
+</div>
+
+<br>
+
+<div>
+    <label for="start_at">
+        Waktu Mulai
+    </label>
+
+    <input
+        id="start_at"
+        type="datetime-local"
+        name="start_at"
+        value="{{ old(
+            'start_at',
+            isset($activity) && $activity->start_at
+                ? $activity->start_at->format('Y-m-d\TH:i')
+                : ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="end_at">
+        Waktu Selesai
+    </label>
+
+    <input
+        id="end_at"
+        type="datetime-local"
+        name="end_at"
+        value="{{ old(
+            'end_at',
+            isset($activity) && $activity->end_at
+                ? $activity->end_at->format('Y-m-d\TH:i')
+                : ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="location">
+        Lokasi
+    </label>
+
+    <input
+        id="location"
+        type="text"
+        name="location"
+        value="{{ old(
+            'location',
+            $activity->location ?? ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="capacity">
+        Kapasitas
+    </label>
+
+    <input
+        id="capacity"
+        type="number"
+        name="capacity"
+        min="1"
+        max="500"
+        value="{{ old(
+            'capacity',
+            $activity->capacity ?? ''
+        ) }}"
+    >
+</div>
+
+<br>
+
+<div>
+    <label for="poster">
+        Poster
+    </label>
+
+    <input
+        id="poster"
+        type="file"
+        name="poster"
+        accept="image/*"
+    >
+</div>
+
+<br>
+
+<button type="submit">
+    Simpan
+</button>

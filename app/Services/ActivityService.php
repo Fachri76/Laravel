@@ -3,70 +3,119 @@
 namespace App\Services;
 
 use App\Models\Activity;
-use DomainException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class ActivityService
 {
-    private const TRANSITIONS = [
-        'Planned' => [
-            'Planned',
-            'Ongoing',
-        ],
+    public function create(array $data): Activity
+    {
+        $poster = $data['poster'] ?? null;
 
-        'Ongoing' => [
-            'Ongoing',
-            'Done',
-        ],
+        unset($data['poster']);
 
-        'Done' => [
-            'Done',
-        ],
-    ];
+        if ($poster instanceof UploadedFile) {
+            $data['poster_path'] = $poster->store(
+                'posters',
+                'public'
+            );
+        }
 
-    public function create(
-        array $validatedData
-    ): Activity {
-        return Activity::create(
-            $validatedData
-        );
+        $data['status'] = 'draft';
+
+        return Activity::create($data);
     }
 
     public function update(
         Activity $activity,
-        array $validatedData
+        array $data
     ): Activity {
-        $nextStatus =
-            $validatedData['status']
-            ?? $activity->status;
+        $poster = $data['poster'] ?? null;
 
-        $this->ensureValidTransition(
-            $activity->status,
-            $nextStatus
-        );
+        unset($data['poster']);
 
-        $activity->update(
-            $validatedData
-        );
+        $oldPoster = $activity->poster_path;
+        $newPoster = null;
+
+        if ($poster instanceof UploadedFile) {
+            $newPoster = $poster->store(
+                'posters',
+                'public'
+            );
+
+            $data['poster_path'] = $newPoster;
+        }
+
+        try {
+            $activity->update($data);
+        } catch (Throwable $exception) {
+            if ($newPoster !== null) {
+                Storage::disk('public')->delete($newPoster);
+            }
+
+            throw $exception;
+        }
+
+        if (
+            $newPoster !== null &&
+            $oldPoster !== null
+        ) {
+            Storage::disk('public')->delete($oldPoster);
+        }
 
         return $activity->refresh();
     }
 
-    private function ensureValidTransition(
-        string $current,
-        string $next
-    ): void {
-        $allowed =
-            self::TRANSITIONS[$current]
-            ?? [];
-
-        if (! in_array(
-            $next,
-            $allowed,
-            true
-        )) {
-            throw new DomainException(
-                "Transisi status {$current} ke {$next} tidak diizinkan."
-            );
+    public function publish(Activity $activity): Activity
+    {
+        if ($activity->status !== 'draft') {
+            throw ValidationException::withMessages([
+                'status' =>
+                    'Hanya kegiatan draft yang dapat dipublikasikan.',
+            ]);
         }
+
+        $requiredFields = [
+            'category_id',
+            'code',
+            'title',
+            'location',
+            'start_at',
+            'end_at',
+            'capacity',
+        ];
+
+        foreach ($requiredFields as $field) {
+            if (blank($activity->{$field})) {
+                throw ValidationException::withMessages([
+                    'status' =>
+                        'Data kegiatan belum lengkap untuk dipublikasikan.',
+                ]);
+            }
+        }
+
+        $activity->update([
+            'status' => 'published',
+        ]);
+
+        return $activity->refresh();
+    }
+
+    public function complete(Activity $activity): Activity
+    {
+        if ($activity->status !== 'published') {
+            throw ValidationException::withMessages([
+                'status' =>
+                    'Hanya kegiatan published yang dapat diselesaikan.',
+            ]);
+        }
+
+        $activity->update([
+            'status' => 'completed',
+        ]);
+
+        return $activity->refresh();
     }
 }
